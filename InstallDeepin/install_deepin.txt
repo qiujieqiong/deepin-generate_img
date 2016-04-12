@@ -1,0 +1,119 @@
+*** Settings ***
+Documentation     Theses cases will install deepin
+Library				OperatingSystem
+Library				String
+Library				Collections
+Library				pyautogui
+	 		
+
+*** Variables ***
+${down_key}		down
+${enter_key}		enter
+${tab_key}		tab
+${boot_menu}		/home/jenkins/InstallDeepin/needles/boot_menu.png
+${lang_menu}		/home/jenkins/InstallDeepin/needles/lang_menu.png
+${lang_checked}		/home/jenkins/InstallDeepin/needles/lang_checked.png
+${user_menu}		/home/jenkins/InstallDeepin/needles/user_menu.png
+${user_setting}		/home/jenkins/InstallDeepin/needles/user_setting.png
+${partition}		/home/jenkins/InstallDeepin/needles/partition.png
+${start_install}	/home/jenkins/InstallDeepin/needles/start_install.png
+${install_finish}	/home/jenkins/InstallDeepin/needles/install_finish.png
+${login}		/home/jenkins/InstallDeepin/needles/login.png
+${desktop}		/home/jenkins/InstallDeepin/needles/desktop.png
+${cp_log}		sudo cp log.html /home/deepin/log.html
+${username}		demo
+${passwd}		demo
+@{switch_qemu}		ctrlleft altleft
+@{close_qemu}		altleft	f4
+${exist_qemu}		ps aux|grep qemu|grep -v grep
+
+*** Keywords ***
+Assert Screen
+	[arguments]	${needle}
+	${needle}	Encode String To Bytes	${needle}	UTF-8
+	Sleep 	5
+	${return_result}	pyautogui.locateCenterOnScreen	${needle}
+	Should Not Be Equal	${return_result}	${None}
+
+Send Single Key
+	[arguments]	${key}
+	${key}	Encode String To Bytes	${key}	UTF-8
+	#${key}	Evaluate	str('${key}') # Also str() would work here
+	should be byte string	${key}
+	pyautogui.press	${key}
+
+Confirm Partition
+	Repeat Keyword 	4 times		Send Single key	${tab_key}
+	Sleep 			2
+	Send Single Key 	${enter_key}
+
+Install Language
+	Assert Screen 		${boot_menu}
+	Sleep 			2
+	Send Single Key 	${enter_key}
+	Sleep 			50
+	Assert Screen		${lang_menu}
+	Sleep 			2
+	Repeat Keyword  2 times         Send Single key 	${down_key}
+	Sleep 			2
+	Assert Screen		${lang_checked}
+	Sleep 			1
+	Send Single Key 	${enter_key}
+	Sleep			100
+
+Install User Setting
+	Assert Screen 		${user_menu}
+	Sleep 			1
+	pyautogui.typewrite	${username}
+	Repeat Keyword 	2 times		Send Single key	${tab_key}
+	Sleep                   1
+	pyautogui.typewrite	${passwd}
+	Sleep                   1
+	Send Single key		${tab_key}
+	Sleep                   1
+	pyautogui.typewrite	${passwd}
+	Sleep                   1
+	Send Single key		${tab_key}
+	Sleep                   1
+	Send Single Key 	${enter_key}
+	Sleep                   5
+
+Install Partition
+	Assert Screen 		${partition}
+	Repeat Keyword 	2 times		Confirm Partition
+
+Install Finish
+	Sleep 			800
+	Assert Screen		${install_finish}
+	Repeat Keyword 	2 times		Send Single key	${tab_key}
+	Sleep 			2
+	Send Single Key 	${enter_key}
+
+Login System
+	Sleep 			100
+	Assert Screen 		${login}
+	Sleep                   1
+	pyautogui.typewrite	${passwd}
+	Sleep                   1
+	Send Single Key 	${enter_key}
+	Sleep 			120
+	Assert Screen 		${desktop}
+
+Close QEMU
+	Sleep			2
+	pyautogui.hotkey	@{switch_qemu}
+	Sleep 			2
+	pyautogui.hotkey	@{close_qemu}
+	Sleep 			2
+	${output}		Run		${exist_qemu}
+	Should Not Contain	${output}	qemu
+*** Test Cases ***
+Test Install Deepin
+	[Tags]	Install_language
+	Install Language
+	Install User Setting
+	Install Partition
+	Install Finish
+	Login System
+	[Teardown]		Close QEMU
+

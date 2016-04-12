@@ -1,0 +1,19 @@
+#!/bin/bash -e
+
+function fetch_latest_ISO(){
+	fetch-latest-ISO $@
+} 
+function make_img(){
+	#cd /home/jenkins_slave
+	qemu-img create -f qcow2 test.img 50G
+	chmod a+w test.img
+	export DISPLAY=:0
+	sudo -u deepin qemu-system-x86_64 test.img -m 1024 -enable-kvm -cdrom /home/jenkins/iso/deepin-sid-amd64.iso --redir tcp:2222::22 &
+}
+function install_deepin(){
+	#export DISPLAY=:0
+	pybot /home/jenkins/InstallDeepin/install_deepin.txt
+}
+fetch_latest_ISO $@
+make_img
+install_deepin
